@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Candlestick Pattern Recognition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- ✅ Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            padding: 20px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            padding: 30px;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+        
+        .page-title {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        
+        .form-card {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: none;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .chart-container {
+            margin-top: 30px;
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table-container {
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            position: relative;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table {
+            margin-bottom: 0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: linear-gradient(45deg, #667eea, #764ba2) !important;
+            color: white !important;
+            border: none !important;
+            padding: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.1);
+            transform: scale(1.01);
+        }
+        
+        .table td {
+            padding: 15px;
+            vertical-align: middle;
+            border-color: #f8f9fa;
+        }
+        
+        .table-info {
+            background: linear-gradient(135deg, rgba(23, 162, 184, 0.1), rgba(40, 167, 69, 0.1));
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 5px solid #17a2b8;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+            padding: 20px;
+        }
+        
+        .navbar-nav {
+            margin-left: auto;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-lg">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('index') }}">
+            <i class="fas fa-chart-line me-2"></i>Candlestick Tools
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="{{ url_for('index') }}">
+                    <i class="fas fa-search me-1"></i>Single Analysis
+                </a>
+                <a class="nav-link" href="{{ url_for('pattern_scanner') }}">
+                    <i class="fas fa-radar-chart me-1"></i>Pattern Scanner
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-chart-candlestick me-3"></i>Single Analysis
+            </h1>
+            <p class="page-subtitle">
+                <i class="fas fa-info-circle me-2"></i>
+                Analyze candlestick patterns for individual companies and timeframes
+            </p>
+        </div>
+
+        <!-- Analysis Form -->
+        <div class="form-card">
+            <h4 class="mb-4">
+                <i class="fas fa-cogs me-2 text-primary"></i>
+                Analysis Configuration
+            </h4>
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="csv_file" class="form-label">
+                            <i class="fas fa-file-csv me-2"></i>Select Symbol
+                        </label>
+                        <select class="form-control" id="csv_file" name="csv_file" required>
+                            <option value="">Choose a Symbol...</option>
+                            {% for file in csv_files %}
+                                <option value="{{ file }}" {% if selected_csv == file %}selected{% endif %}>
+                                    {{ file.replace('.csv', '').replace('-', ' ').title() }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="timeframe" class="form-label">
+                            <i class="fas fa-clock me-2"></i>Select Timeframe
+                        </label>
+                        <select class="form-control" id="timeframe" name="timeframe" required>
+                            {% for value, display in timeframes %}
+                                <option value="{{ value }}" {% if selected_timeframe == value %}selected{% endif %}>
+                                    {{ display }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="start_date" class="form-label">
+                            <i class="fas fa-calendar-day me-2"></i>Start Date
+                        </label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ selected_start_date }}" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="end_date" class="form-label">
+                            <i class="fas fa-calendar-check me-2"></i>End Date
+                        </label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ selected_end_date }}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <button type="submit" name="action" value="show_table" class="btn btn-outline-info w-100 btn-lg">
+                            <i class="fas fa-table me-2"></i>Show Data Table
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button type="submit" name="action" value="analyze" class="btn btn-gradient w-100 btn-lg">
+                            <i class="fas fa-chart-line me-2"></i>Analyze & Show Chart
+                        </button>
+                    </div>
+                </div>
+
+                {% if error %}
+                    <div class="alert alert-danger mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                    </div>
+                {% endif %}
+            </form>
+        </div>
+
+    {% if table_data %}
+        <div class="table-info">
+            <h4>📊 Data Preview</h4>
+            <p><strong>File:</strong> {{ selected_csv }}</p>
+            <p><strong>Timeframe:</strong> {{ selected_timeframe }}</p>
+            <p><strong>Date Range:</strong> {{ selected_start_date }} to {{ selected_end_date }}</p>
+            <p><strong>Total Rows:</strong> {{ total_rows }} (Showing first 100 rows)</p>
+        </div>
+        
+        <div class="table-container">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Open</th>
+                        <th>High</th>
+                        <th>Low</th>
+                        <th>Close</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td>{{ row.Date if row.Date else (row.date + ' ' + row.time) }}</td>
+                        <td>{{ "%.2f"|format(row.Open) }}</td>
+                        <td>{{ "%.2f"|format(row.High) }}</td>
+                        <td>{{ "%.2f"|format(row.Low) }}</td>
+                        <td>{{ "%.2f"|format(row.Close) }}</td>
+                        <td>{{ row.Volume if row.Volume else row.volume }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+                
+        <div class="text-center mt-3">
+            <form method="POST" style="display: inline;">
+                <input type="hidden" name="csv_file" value="{{ selected_csv }}">
+                <input type="hidden" name="timeframe" value="{{ selected_timeframe }}">
+                <input type="hidden" name="start_date" value="{{ selected_start_date }}">
+                <input type="hidden" name="end_date" value="{{ selected_end_date }}">
+                <button type="submit" name="action" value="analyze" class="btn btn-gradient btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>Proceed to Chart Analysis
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+    {% if chart %}
+        <div class="chart-container">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-candlestick me-2"></i>Pattern Analysis Chart
+            </h4>
+            {{ chart|safe }}
+        </div>
+    {% endif %}
+    
+    </div>
+</div>
+
+<!-- Add smooth scrolling and animations -->
+<script>
+    // Smooth scroll behavior
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    // Add loading animation to buttons
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after a delay (fallback)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 10000);
+        });
+    });
+
+    // Add hover effects to table rows
+    document.querySelectorAll('.table tbody tr').forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(5px)';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+        });
+    });
+</script>
+
+</body>
+</html>

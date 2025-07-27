@@ -33,6 +33,20 @@ This project is a web-based tool for detecting and visualizing candlestick patte
 - HTML/CSS (Bootstrap, Font Awesome, Bootstrap Icons)
 - Jinja2 templating
 
+## Team Members
+
+- **Haresh Zapadiya**  
+  Worked on data-related tasks, backend development, and provided Python support.
+
+- **Deven Machchhar**  
+  Focused on research, development, and testing.
+
+- **Dhruvrajsinh Zala**  
+  Possesses strong knowledge of trading and contributed as a frontend designer.
+
+- **Vishal Baraiya** (Team Leader)  
+  Led the backend development, managed code merging and bug fixing, and effectively utilized AI tools.
+  
 ## Getting Started
 
 1. Clone this repository:

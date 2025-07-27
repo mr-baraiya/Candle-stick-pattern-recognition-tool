@@ -93,3 +93,16 @@ def is_three_white_soldiers(row1, row2, row3):
     except Exception as e:
         print(f"Error in is_three_white_soldiers: {e}")
         return False
+
+def get_available_patterns():
+    """
+    Return a list of available patterns for selection
+    """
+    return [
+        ('all', 'All Patterns'),
+        ('Hammer', 'Hammer'),
+        ('Doji', 'Doji'),
+        ('RisingWindow', 'Rising Window'),
+        ('EveningStar', 'Evening Star'),
+        ('ThreeWhiteSoldiers', 'Three White Soldiers')
+    ]

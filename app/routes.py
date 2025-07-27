@@ -8,7 +8,8 @@ from app.patterns import (
     is_doji,
     is_rising_window,
     is_evening_star,
-    is_three_white_soldiers
+    is_three_white_soldiers,
+    get_available_patterns
 )
 from app.visualize import visualize_patterns
 from app.pattern_scanner import scan_all_patterns
@@ -17,36 +18,38 @@ app=Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # Get available CSV files and timeframes for the dropdowns
+    # Get available CSV files, timeframes and patterns for the dropdowns
     csv_files = get_available_csv_files()
     timeframes = get_available_timeframes()
+    patterns = get_available_patterns()
     
     if request.method == "POST":
         csv_file = request.form.get("csv_file")
         start_date = request.form.get("start_date")
         end_date = request.form.get("end_date")
         timeframe = request.form.get("timeframe", "1min")
+        selected_pattern = request.form.get("pattern_filter", "all")
         action = request.form.get("action")
 
         today = datetime.today().date()
         if datetime.strptime(end_date, "%Y-%m-%d").date() > today:
             return render_template("index.html", error="End date cannot be in the future.", 
-                                 csv_files=csv_files, timeframes=timeframes)
+                                 csv_files=csv_files, timeframes=timeframes, patterns=patterns)
         if datetime.strptime(start_date, "%Y-%m-%d").date() > today:
             return render_template("index.html", error="Start date cannot be in the future.", 
-                                 csv_files=csv_files, timeframes=timeframes)
+                                 csv_files=csv_files, timeframes=timeframes, patterns=patterns)
 
         df = fetch_data(csv_file, start_date, end_date, timeframe)
         
         if df.empty:
             return render_template("index.html", error="No data available for the selected file or date range.", 
-                                 csv_files=csv_files, timeframes=timeframes)
+                                 csv_files=csv_files, timeframes=timeframes, patterns=patterns)
             
         df = preprocess_data(df)
 
         if df.empty:
             return render_template("index.html", error="No valid data available after preprocessing.", 
-                                 csv_files=csv_files, timeframes=timeframes)
+                                 csv_files=csv_files, timeframes=timeframes, patterns=patterns)
 
         # If action is "show_table", just show the data table
         if action == "show_table":
@@ -55,55 +58,72 @@ def index():
             return render_template("index.html", 
                                  csv_files=csv_files, 
                                  timeframes=timeframes,
+                                 patterns=patterns,
                                  table_data=table_data,
                                  selected_csv=csv_file,
                                  selected_timeframe=timeframe,
                                  selected_start_date=start_date,
                                  selected_end_date=end_date,
+                                 selected_pattern=selected_pattern,
                                  total_rows=len(df))
 
         # If action is "analyze", perform pattern analysis and show chart
         if action == "analyze":
-            # Single candle patterns
-            df['Hammer'] = df.apply(is_hammer, axis=1)
-            df['Doji'] = df.apply(is_doji, axis=1)
+            # Initialize all pattern columns to False
+            df['Hammer'] = False
+            df['Doji'] = False
+            df['RisingWindow'] = False
+            df['EveningStar'] = False
+            df['ThreeWhiteSoldiers'] = False
+            
+            # Analyze patterns based on selection
+            if selected_pattern == "all" or selected_pattern == "Hammer":
+                df['Hammer'] = df.apply(is_hammer, axis=1)
+            
+            if selected_pattern == "all" or selected_pattern == "Doji":
+                df['Doji'] = df.apply(is_doji, axis=1)
 
-            # Two-candle patterns
-            df['RisingWindow'] = df.apply(
-                lambda row: is_rising_window(row, df.iloc[df.index.get_loc(row.name) - 1]) if row.name > 0 else False,
-                axis=1
-            )
+            if selected_pattern == "all" or selected_pattern == "RisingWindow":
+                # Two-candle patterns
+                df['RisingWindow'] = df.apply(
+                    lambda row: is_rising_window(row, df.iloc[df.index.get_loc(row.name) - 1]) if row.name > 0 else False,
+                    axis=1
+                )
 
-            # Three-candle patterns
-            df['EveningStar'] = df.apply(
-                lambda row: is_evening_star(
-                    df.iloc[df.index.get_loc(row.name) - 2],
-                    df.iloc[df.index.get_loc(row.name) - 1],
-                    row
-                ) if row.name > 1 else False,
-                axis=1
-            )
+            if selected_pattern == "all" or selected_pattern == "EveningStar":
+                # Three-candle patterns
+                df['EveningStar'] = df.apply(
+                    lambda row: is_evening_star(
+                        df.iloc[df.index.get_loc(row.name) - 2],
+                        df.iloc[df.index.get_loc(row.name) - 1],
+                        row
+                    ) if row.name > 1 else False,
+                    axis=1
+                )
 
-            df['ThreeWhiteSoldiers'] = df.apply(
-                lambda row: is_three_white_soldiers(
-                    df.iloc[df.index.get_loc(row.name) - 2],
-                    df.iloc[df.index.get_loc(row.name) - 1],
-                    row
-                ) if row.name > 1 else False,
-                axis=1
-            )
+            if selected_pattern == "all" or selected_pattern == "ThreeWhiteSoldiers":
+                df['ThreeWhiteSoldiers'] = df.apply(
+                    lambda row: is_three_white_soldiers(
+                        df.iloc[df.index.get_loc(row.name) - 2],
+                        df.iloc[df.index.get_loc(row.name) - 1],
+                        row
+                    ) if row.name > 1 else False,
+                    axis=1
+                )
 
             chart = visualize_patterns(df)
             return render_template("index.html", 
                                  chart=chart.to_html(), 
                                  csv_files=csv_files, 
                                  timeframes=timeframes,
+                                 patterns=patterns,
                                  selected_csv=csv_file,
                                  selected_timeframe=timeframe,
                                  selected_start_date=start_date,
-                                 selected_end_date=end_date)
+                                 selected_end_date=end_date,
+                                 selected_pattern=selected_pattern)
 
-    return render_template("index.html", csv_files=csv_files, timeframes=timeframes)
+    return render_template("index.html", csv_files=csv_files, timeframes=timeframes, patterns=patterns)
 
 @app.route("/pattern-scanner", methods=["GET", "POST"])
 def pattern_scanner():

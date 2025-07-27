@@ -42,9 +42,12 @@ def fetch_data(csv_file, start_date, end_date, timeframe='1min'):
     if parent_key:
         print(f"⚡ Using parent cache {parent_key} and slicing for new range")
         parent_data = _date_cache[parent_key]
+        start_dt = pd.to_datetime(start_date)
+        end_dt = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        
         filtered = parent_data[
-            (parent_data['datetime'] >= pd.to_datetime(start_date)) &
-            (parent_data['datetime'] <= pd.to_datetime(end_date))
+            (parent_data['datetime'] >= start_dt) &
+            (parent_data['datetime'] <= end_dt)
         ].copy()
         _date_cache[range_key] = filtered
         return filtered
@@ -62,17 +65,24 @@ def fetch_data(csv_file, start_date, end_date, timeframe='1min'):
 
     # ✅ Slice data for requested range
     start_datetime = pd.to_datetime(start_date)
-    end_datetime = pd.to_datetime(end_date)
+    end_datetime = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)  # Include full end date
 
     if data.empty:
         print(f"❌ Data is empty for {csv_file}")
         return pd.DataFrame()
 
-    if data.index.name != 'datetime':
+    # Ensure datetime is the index
+    if 'datetime' in data.columns:
         data = data.set_index('datetime')
+    elif data.index.name != 'datetime':
+        print(f"❌ No datetime index found in data for {csv_file}")
+        return pd.DataFrame()
 
     print(f"📅 Slicing data from {start_datetime} to {end_datetime}")
-    filtered = data.loc[start_datetime:end_datetime].copy()
+    print(f"📊 Available data range: {data.index.min()} to {data.index.max()}")
+    
+    # Filter data using boolean indexing for better compatibility
+    filtered = data[(data.index >= start_datetime) & (data.index <= end_datetime)].copy()
     filtered.reset_index(inplace=True)
     
     print(f"✅ Filtered data: {len(filtered)} rows")
@@ -145,22 +155,41 @@ def _load_and_cache(csv_path, cache_meta, timeframe, cache_file):
 def aggregate_timeframe(data, timeframe):
     """Aggregate data into different timeframes."""
     timeframe_map = {
-        '1min': '1min',
-        '5min': '5min',
-        '15min': '15min',
-        '30min': '30min',
-        '1hour': '1h'
+        '1min': '1T',
+        '5min': '5T',
+        '15min': '15T',
+        '30min': '30T',
+        '1hour': '1H'
     }
+    
     if timeframe not in timeframe_map:
+        print(f"❌ Invalid timeframe: {timeframe}")
         return data
-    resampled = data.resample(timeframe_map[timeframe]).agg({
-        'open': 'first',
-        'high': 'max',
-        'low': 'min',
-        'close': 'last',
-        'volume': 'sum'
-    }).dropna()
-    return resampled
+    
+    print(f"🔄 Aggregating data to {timeframe} using rule '{timeframe_map[timeframe]}'")
+    
+    # Ensure data has the required columns
+    required_columns = ['open', 'high', 'low', 'close', 'volume']
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        print(f"❌ Missing columns for aggregation: {missing_columns}")
+        return data
+    
+    try:
+        resampled = data.resample(timeframe_map[timeframe]).agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last',
+            'volume': 'sum'
+        }).dropna()
+        
+        print(f"✅ Aggregated from {len(data)} to {len(resampled)} rows")
+        return resampled
+        
+    except Exception as e:
+        print(f"❌ Error during aggregation: {str(e)}")
+        return data
 
 
 def get_available_csv_files():

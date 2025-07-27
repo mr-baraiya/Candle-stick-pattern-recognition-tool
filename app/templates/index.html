@@ -215,7 +215,7 @@
             </h4>
             <form method="POST">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="csv_file" class="form-label">
                             <i class="fas fa-file-csv me-2"></i>Select Symbol
                         </label>
@@ -229,13 +229,26 @@
                         </select>
                     </div>
                     
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="timeframe" class="form-label">
                             <i class="fas fa-clock me-2"></i>Select Timeframe
                         </label>
                         <select class="form-control" id="timeframe" name="timeframe" required>
                             {% for value, display in timeframes %}
                                 <option value="{{ value }}" {% if selected_timeframe == value %}selected{% endif %}>
+                                    {{ display }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="pattern_filter" class="form-label">
+                            <i class="fas fa-shapes me-2"></i>Select Pattern
+                        </label>
+                        <select class="form-control" id="pattern_filter" name="pattern_filter" required>
+                            {% for value, display in patterns %}
+                                <option value="{{ value }}" {% if selected_pattern == value %}selected{% endif %}>
                                     {{ display }}
                                 </option>
                             {% endfor %}
@@ -333,6 +346,35 @@
     {% endif %}
 
     {% if chart %}
+        <!-- Pattern Analysis Info -->
+        {% if selected_pattern %}
+        <div class="alert alert-info">
+            <h5 class="alert-heading">
+                <i class="fas fa-bullseye me-2"></i>Pattern Analysis Results
+            </h5>
+            <div class="row">
+                <div class="col-md-3">
+                    <strong><i class="fas fa-shapes me-1"></i>Pattern:</strong>
+                    <span class="badge bg-primary ms-2">
+                        {% if selected_pattern == 'all' %}All Patterns{% else %}{{ selected_pattern }}{% endif %}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <strong><i class="fas fa-building me-1"></i>Symbol:</strong>
+                    <span class="text-info">{{ selected_csv.replace('.csv', '').replace('-', ' ').title() }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong><i class="fas fa-clock me-1"></i>Timeframe:</strong>
+                    <span class="text-success">{{ selected_timeframe }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong><i class="fas fa-calendar me-1"></i>Period:</strong>
+                    <span class="text-warning">{{ selected_start_date }} to {{ selected_end_date }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="chart-container">
             <h4 class="mb-3">
                 <i class="fas fa-chart-candlestick me-2"></i>Pattern Analysis Chart

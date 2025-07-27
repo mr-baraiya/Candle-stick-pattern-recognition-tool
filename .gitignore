@@ -7,8 +7,8 @@ __pycache__/
 *$py.class
 
 # Custom cache directory
+app/cache/
 catch/
-app/catche/
 
 # VS Code settings (optional)
 .vscode/

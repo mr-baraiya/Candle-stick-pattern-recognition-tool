@@ -136,6 +136,113 @@
             font-weight: 600;
             margin: 10px 0;
         }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px 0;
+            }
+            
+            .main-container {
+                margin: 10px;
+                padding: 20px;
+                border-radius: 15px;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .page-subtitle {
+                font-size: 1rem;
+            }
+            
+            .chart-container {
+                padding: 15px;
+                margin-top: 20px;
+            }
+            
+            .pattern-info {
+                padding: 20px;
+                margin: 20px 0;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card h6 {
+                font-size: 0.9rem;
+                margin: 8px 0;
+            }
+            
+            .pattern-badge {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+            
+            .btn-back {
+                padding: 8px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .alert {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .page-title {
+                font-size: 1.8rem;
+            }
+            
+            .main-container {
+                margin: 5px;
+                padding: 15px;
+            }
+            
+            .chart-container {
+                padding: 10px;
+            }
+            
+            .pattern-info {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .stat-card h6 {
+                font-size: 0.85rem;
+            }
+            
+            .pattern-badge {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+            
+            .btn-back {
+                padding: 6px 16px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -151,10 +258,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{{ url_for('index') }}">
+                <a class="nav-link" href="{{ url_for('single_analysis') }}">
                     <i class="fas fa-search me-1"></i>Single Analysis
                 </a>
-                <a class="nav-link" href="{{ url_for('pattern_scanner') }}">
+                <a class="nav-link" href="{{ url_for('index') }}">
                     <i class="fas fa-radar-chart me-1"></i>Pattern Scanner
                 </a>
             </div>
@@ -166,7 +273,7 @@
     <div class="main-container">
         <!-- Back Button -->
         <div class="mb-4">
-            <a href="{{ url_for('pattern_scanner') }}" class="btn-back">
+            <a href="{{ url_for('index') }}" class="btn-back">
                 <i class="fas fa-arrow-left me-2"></i>Back to Scanner
             </a>
         </div>

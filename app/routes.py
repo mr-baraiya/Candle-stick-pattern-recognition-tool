@@ -18,6 +18,69 @@ app=Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """
+    Main page - Pattern Scanner that shows all patterns across all files and timeframes
+    """
+    if request.method == "POST":
+        start_date = request.form.get("start_date")
+        end_date = request.form.get("end_date")
+        
+        # Get filter parameters
+        script_filter = request.form.get("script_filter", "")
+        pattern_filter = request.form.get("pattern_filter", "")
+        timeframe_filter = request.form.get("timeframe_filter", "")
+        
+        today = datetime.today().date()
+        if datetime.strptime(end_date, "%Y-%m-%d").date() > today:
+            return render_template("pattern_scanner.html", error="End date cannot be in the future.")
+        if datetime.strptime(start_date, "%Y-%m-%d").date() > today:
+            return render_template("pattern_scanner.html", error="Start date cannot be in the future.")
+        
+        # Scan all patterns
+        try:
+            all_patterns = scan_all_patterns(start_date, end_date)
+            
+            # Apply filters
+            filtered_patterns = all_patterns
+            if script_filter:
+                filtered_patterns = [p for p in filtered_patterns if script_filter.lower() in p['Script'].lower()]
+            if pattern_filter:
+                filtered_patterns = [p for p in filtered_patterns if pattern_filter.lower() in p['Pattern'].lower()]
+            if timeframe_filter:
+                filtered_patterns = [p for p in filtered_patterns if timeframe_filter.lower() in p['Timeframe'].lower()]
+            
+            # Get unique values for filter dropdowns
+            unique_scripts = sorted(list(set([p['Script'] for p in all_patterns])))
+            unique_patterns = sorted(list(set([p['Pattern'] for p in all_patterns])))
+            unique_timeframes = sorted(list(set([p['Timeframe'] for p in all_patterns])))
+            
+            return render_template("pattern_scanner.html", 
+                                 patterns=filtered_patterns,
+                                 unique_scripts=unique_scripts,
+                                 unique_patterns=unique_patterns,
+                                 unique_timeframes=unique_timeframes,
+                                 selected_start_date=start_date,
+                                 selected_end_date=end_date,
+                                 script_filter=script_filter,
+                                 pattern_filter=pattern_filter,
+                                 timeframe_filter=timeframe_filter,
+                                 total_patterns=len(filtered_patterns))
+        except Exception as e:
+            return render_template("pattern_scanner.html", error=f"Error scanning patterns: {str(e)}")
+    
+    # Set default date range for available data
+    default_start_date = "2025-01-01"  # Based on your CSV data
+    default_end_date = "2025-06-30"    # Based on your CSV data (6 months)
+    
+    return render_template("pattern_scanner.html", 
+                         selected_start_date=default_start_date,
+                         selected_end_date=default_end_date)
+
+@app.route("/single-analysis", methods=["GET", "POST"])
+def single_analysis():
+    """
+    Single Analysis page for analyzing individual companies and timeframes
+    """
     # Get available CSV files, timeframes and patterns for the dropdowns
     csv_files = get_available_csv_files()
     timeframes = get_available_timeframes()
@@ -123,61 +186,16 @@ def index():
                                  selected_end_date=end_date,
                                  selected_pattern=selected_pattern)
 
-    return render_template("index.html", csv_files=csv_files, timeframes=timeframes, patterns=patterns)
-
-@app.route("/pattern-scanner", methods=["GET", "POST"])
-def pattern_scanner():
-    """
-    Route for pattern scanner that shows all patterns across all files and timeframes
-    """
-    if request.method == "POST":
-        start_date = request.form.get("start_date")
-        end_date = request.form.get("end_date")
-        
-        # Get filter parameters
-        script_filter = request.form.get("script_filter", "")
-        pattern_filter = request.form.get("pattern_filter", "")
-        timeframe_filter = request.form.get("timeframe_filter", "")
-        
-        today = datetime.today().date()
-        if datetime.strptime(end_date, "%Y-%m-%d").date() > today:
-            return render_template("pattern_scanner.html", error="End date cannot be in the future.")
-        if datetime.strptime(start_date, "%Y-%m-%d").date() > today:
-            return render_template("pattern_scanner.html", error="Start date cannot be in the future.")
-        
-        # Scan all patterns
-        try:
-            all_patterns = scan_all_patterns(start_date, end_date)
-            
-            # Apply filters
-            filtered_patterns = all_patterns
-            if script_filter:
-                filtered_patterns = [p for p in filtered_patterns if script_filter.lower() in p['Script'].lower()]
-            if pattern_filter:
-                filtered_patterns = [p for p in filtered_patterns if pattern_filter.lower() in p['Pattern'].lower()]
-            if timeframe_filter:
-                filtered_patterns = [p for p in filtered_patterns if timeframe_filter.lower() in p['Timeframe'].lower()]
-            
-            # Get unique values for filter dropdowns
-            unique_scripts = sorted(list(set([p['Script'] for p in all_patterns])))
-            unique_patterns = sorted(list(set([p['Pattern'] for p in all_patterns])))
-            unique_timeframes = sorted(list(set([p['Timeframe'] for p in all_patterns])))
-            
-            return render_template("pattern_scanner.html", 
-                                 patterns=filtered_patterns,
-                                 unique_scripts=unique_scripts,
-                                 unique_patterns=unique_patterns,
-                                 unique_timeframes=unique_timeframes,
-                                 selected_start_date=start_date,
-                                 selected_end_date=end_date,
-                                 script_filter=script_filter,
-                                 pattern_filter=pattern_filter,
-                                 timeframe_filter=timeframe_filter,
-                                 total_patterns=len(filtered_patterns))
-        except Exception as e:
-            return render_template("pattern_scanner.html", error=f"Error scanning patterns: {str(e)}")
+    # Set default date range for available data
+    default_start_date = "2025-01-01"  # Based on your CSV data
+    default_end_date = "2025-06-30"    # Based on your CSV data (6 months)
     
-    return render_template("pattern_scanner.html")
+    return render_template("index.html", 
+                         csv_files=csv_files, 
+                         timeframes=timeframes, 
+                         patterns=patterns,
+                         selected_start_date=default_start_date,
+                         selected_end_date=default_end_date)
 
 @app.route("/show-pattern")
 def show_pattern():

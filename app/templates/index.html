@@ -168,6 +168,207 @@
             font-weight: 700;
             font-size: 1.5rem;
         }
+        
+        /* Mobile Data Card Styles */
+        .data-card {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .data-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .data-card .card-header {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .data-card .card-body {
+            padding: 15px;
+        }
+        
+        .price-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px 0;
+        }
+        
+        .price-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .price-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .volume-info {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .volume-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+        
+        .volume-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .data-results-container {
+            margin-top: 20px;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px 0;
+            }
+            
+            .main-container {
+                margin: 10px;
+                padding: 20px;
+                border-radius: 15px;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .page-subtitle {
+                font-size: 1rem;
+            }
+            
+            .form-card {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .data-card {
+                margin-bottom: 12px;
+            }
+            
+            .data-card .card-header {
+                padding: 10px 12px;
+            }
+            
+            .data-card .card-body {
+                padding: 12px;
+            }
+            
+            .price-item {
+                margin-bottom: 6px;
+                padding: 3px 0;
+            }
+            
+            .price-label {
+                font-size: 0.8rem;
+            }
+            
+            .price-value {
+                font-size: 0.85rem;
+            }
+            
+            .volume-info {
+                padding: 6px 10px;
+                margin-top: 8px;
+            }
+            
+            .volume-label {
+                font-size: 0.8rem;
+            }
+            
+            .volume-value {
+                font-size: 0.85rem;
+            }
+            
+            .chart-container {
+                padding: 15px;
+                margin-top: 20px;
+                overflow-x: auto;
+            }
+            
+            .table-container {
+                margin-top: 20px;
+                max-height: 300px;
+                overflow-x: auto;
+            }
+            
+            .btn-gradient {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+                min-height: 44px; /* Touch-friendly button size */
+            }
+            
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .alert {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .form-control {
+                padding: 10px 12px;
+                min-height: 44px; /* Touch-friendly input size */
+            }
+            
+            /* Make clickable elements touch-friendly */
+            .nav-link {
+                padding: 10px 15px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .page-title {
+                font-size: 1.8rem;
+            }
+            
+            .main-container {
+                margin: 5px;
+                padding: 15px;
+            }
+            
+            .form-card {
+                padding: 15px;
+            }
+            
+            .chart-container {
+                padding: 10px;
+            }
+            
+            .btn-gradient {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -183,11 +384,11 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <div class="navbar-nav ms-auto">
-                <a class="nav-link active" href="{{ url_for('index') }}">
-                    <i class="fas fa-search me-1"></i>Single Analysis
-                </a>
-                <a class="nav-link" href="{{ url_for('pattern_scanner') }}">
+                <a class="nav-link" href="{{ url_for('index') }}">
                     <i class="fas fa-radar-chart me-1"></i>Pattern Scanner
+                </a>
+                <a class="nav-link active" href="{{ url_for('single_analysis') }}">
+                    <i class="fas fa-search me-1"></i>Single Analysis
                 </a>
             </div>
         </div>
@@ -262,7 +463,8 @@
                             <i class="fas fa-calendar-day me-2"></i>Start Date
                         </label>
                         <input type="date" class="form-control" id="start_date" name="start_date" 
-                               value="{{ selected_start_date }}" required>
+                               value="{{ selected_start_date }}" 
+                               min="2025-01-01" max="2025-06-30" required>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -270,17 +472,35 @@
                             <i class="fas fa-calendar-check me-2"></i>End Date
                         </label>
                         <input type="date" class="form-control" id="end_date" name="end_date" 
-                               value="{{ selected_end_date }}" required>
+                               value="{{ selected_end_date }}" 
+                               min="2025-01-01" max="2025-06-30" required>
+                    </div>
+                </div>
+
+                <!-- Data Range Information -->
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle me-3 mt-1 fs-5 d-none d-sm-block"></i>
+                        <i class="fas fa-info-circle me-2 mt-1 d-sm-none"></i>
+                        <div class="flex-grow-1">
+                            <div><strong>Available Data Range:</strong> January 1, 2025 to June 30, 2025 (6 months)</div>
+                            <div class="mt-2">
+                                <small class="text-muted d-flex align-items-center">
+                                    <i class="fas fa-tools me-2"></i>
+                                    <em>We are continuously working to extend the data range with more historical data</em>
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <button type="submit" name="action" value="show_table" class="btn btn-outline-info w-100 btn-lg">
+                    <div class="col-lg-6 mb-3">
+                        <button type="submit" name="action" value="show_table" class="btn btn-outline-info w-100 btn-lg" disabled>
                             <i class="fas fa-table me-2"></i>Show Data Table
                         </button>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-lg-6 mb-3">
                         <button type="submit" name="action" value="analyze" class="btn btn-gradient w-100 btn-lg">
                             <i class="fas fa-chart-line me-2"></i>Analyze & Show Chart
                         </button>
@@ -304,31 +524,86 @@
             <p><strong>Total Rows:</strong> {{ total_rows }} (Showing first 100 rows)</p>
         </div>
         
-        <div class="table-container">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Date/Time</th>
-                        <th>Open</th>
-                        <th>High</th>
-                        <th>Low</th>
-                        <th>Close</th>
-                        <th>Volume</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div class="data-results-container">
+            <!-- Desktop Table View -->
+            <div class="d-none d-md-block">
+                <div class="table-container">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Open</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Close</th>
+                                <th>Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in table_data %}
+                            <tr>
+                                <td>{{ row.Date if row.Date else (row.date + ' ' + row.time) }}</td>
+                                <td>{{ "%.2f"|format(row.Open) }}</td>
+                                <td>{{ "%.2f"|format(row.High) }}</td>
+                                <td>{{ "%.2f"|format(row.Low) }}</td>
+                                <td>{{ "%.2f"|format(row.Close) }}</td>
+                                <td>{{ row.Volume if row.Volume else row.volume }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Mobile Card View -->
+            <div class="d-md-none">
+                <div class="row">
                     {% for row in table_data %}
-                    <tr>
-                        <td>{{ row.Date if row.Date else (row.date + ' ' + row.time) }}</td>
-                        <td>{{ "%.2f"|format(row.Open) }}</td>
-                        <td>{{ "%.2f"|format(row.High) }}</td>
-                        <td>{{ "%.2f"|format(row.Low) }}</td>
-                        <td>{{ "%.2f"|format(row.Close) }}</td>
-                        <td>{{ row.Volume if row.Volume else row.volume }}</td>
-                    </tr>
+                    <div class="col-12 mb-3">
+                        <div class="data-card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                        {{ row.Date if row.Date else (row.date + ' ' + row.time) }}
+                                    </h6>
+                                    <span class="badge bg-secondary">{{ loop.index }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="price-item">
+                                            <span class="price-label">Open:</span>
+                                            <span class="price-value text-info">{{ "%.2f"|format(row.Open) }}</span>
+                                        </div>
+                                        <div class="price-item">
+                                            <span class="price-label">Low:</span>
+                                            <span class="price-value text-danger">{{ "%.2f"|format(row.Low) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="price-item">
+                                            <span class="price-label">High:</span>
+                                            <span class="price-value text-success">{{ "%.2f"|format(row.High) }}</span>
+                                        </div>
+                                        <div class="price-item">
+                                            <span class="price-label">Close:</span>
+                                            <span class="price-value text-primary">{{ "%.2f"|format(row.Close) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="volume-info mt-2">
+                                    <i class="fas fa-chart-bar text-secondary me-2"></i>
+                                    <span class="volume-label">Volume:</span>
+                                    <span class="volume-value">{{ row.Volume if row.Volume else row.volume }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
         
                 
@@ -424,6 +699,30 @@
             this.style.transform = 'translateX(0)';
         });
     });
+
+    // Date validation and auto-adjustment
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            // Ensure end date is not earlier than start date
+            if (endDateInput.value && endDateInput.value < this.value) {
+                endDateInput.value = this.value;
+            }
+            // Set minimum end date to selected start date
+            endDateInput.min = this.value;
+        });
+
+        endDateInput.addEventListener('change', function() {
+            // Ensure start date is not later than end date
+            if (startDateInput.value && startDateInput.value > this.value) {
+                startDateInput.value = this.value;
+            }
+            // Set maximum start date to selected end date
+            startDateInput.max = this.value;
+        });
+    }
 </script>
 
 </body>

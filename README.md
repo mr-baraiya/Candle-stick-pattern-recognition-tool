@@ -60,7 +60,7 @@ This project is a web-based tool for detecting and visualizing candlestick patte
    ```
 3. Run the application:
    ```bash
-   python app.py
+   python run.py
    ```
 4. Open your browser at `http://localhost:5000` and start analyzing candlestick patterns!
 

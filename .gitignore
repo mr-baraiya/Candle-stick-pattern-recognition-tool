@@ -6,10 +6,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Custom cache directory
-app/cache/
-catch/
-
 # VS Code settings (optional)
 .vscode/
 

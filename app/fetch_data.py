@@ -1,71 +1,67 @@
 import pandas as pd
 import os
-import pickle
+from dotenv import load_dotenv
+from .redis_cache import redis_cache
+import hashlib
 
-# Cache directories
-CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache')
-if not os.path.exists(CACHE_DIR):
-    os.makedirs(CACHE_DIR)
+# Load environment variables
+load_dotenv()
 
-# In-memory caches
-_memory_cache = {}   # full timeframe data
-_date_cache = {}     # filtered ranges
+# Data directory
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'Data')
+
+def _get_file_hash(file_path):
+    """Get hash of file modification time and size for cache validation"""
+    try:
+        stat = os.stat(file_path)
+        hash_input = f"{stat.st_mtime}_{stat.st_size}"
+        return hashlib.md5(hash_input.encode()).hexdigest()
+    except Exception as e:
+        print(f"❌ Error getting file hash: {str(e)}")
+        return None
 
 def fetch_data(csv_file, start_date, end_date, timeframe='1min'):
     """
-    Fetch data with:
-    ✅ Disk cache for full timeframe
-    ✅ Memory cache for full timeframe
-    ✅ Date range cache with sub-range optimization
+    Fetch data with Redis-only caching:
+    ✅ Redis cache for full timeframe data
+    ✅ Redis cache for date range data  
+    ✅ Direct CSV loading if Redis unavailable
     """
     print(f"🔍 fetch_data called: {csv_file}, {start_date} to {end_date}, {timeframe}")
     
+    range_key = f"{csv_file}_{timeframe}_{start_date}_{end_date}"
+
+    # ✅ Check Redis cache for exact date range match first
+    if redis_cache.connected:
+        cached_range_data = redis_cache.get_date_range_data(csv_file, timeframe, start_date, end_date)
+        if cached_range_data is not None:
+            print(f"⚡ Redis range cache hit for {range_key}")
+            return cached_range_data
+
+    # ✅ Load full timeframe data from Redis or CSV
     key = f"{csv_file}_{timeframe}"
-    range_key = f"{key}_{start_date}_{end_date}"
-
-    # ✅ Exact match in cache
-    if range_key in _date_cache:
-        print(f"⚡ Using exact date-range cache for {range_key}")
-        return _date_cache[range_key]
-
-    # ✅ Check if a parent range exists (bigger range already cached)
-    parent_key = None
-    for cached_range in _date_cache.keys():
-        if cached_range.startswith(key):
-            parts = cached_range.split('_')
-            if len(parts) >= 4:
-                start, end = parts[-2], parts[-1]
-                if start <= start_date and end >= end_date:
-                    parent_key = cached_range
-                    break
-
-    if parent_key:
-        print(f"⚡ Using parent cache {parent_key} and slicing for new range")
-        parent_data = _date_cache[parent_key]
-        start_dt = pd.to_datetime(start_date)
-        end_dt = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
-        
-        filtered = parent_data[
-            (parent_data['datetime'] >= start_dt) &
-            (parent_data['datetime'] <= end_dt)
-        ].copy()
-        _date_cache[range_key] = filtered
-        return filtered
-
-    # ✅ Load full timeframe data from memory or disk
-    if key in _memory_cache:
-        print(f"⚡ Using in-memory cache for {key}")
-        data = _memory_cache[key]
-    else:
-        data = _load_from_disk_or_csv(csv_file, timeframe)
+    data = None
+    
+    # Check Redis cache for full data
+    if redis_cache.connected:
+        data = redis_cache.get_full_data(csv_file, timeframe)
+        if data is not None:
+            print(f"⚡ Redis full data cache hit for {key}")
+    
+    # Load from CSV if not in Redis
+    if data is None:
+        data = _load_from_csv(csv_file, timeframe)
         if data.empty:
             print(f"❌ No data loaded for {csv_file}")
             return pd.DataFrame()
-        _memory_cache[key] = data
+        
+        # Store in Redis cache
+        if redis_cache.connected:
+            redis_cache.set_full_data(csv_file, timeframe, data)
 
     # ✅ Slice data for requested range
     start_datetime = pd.to_datetime(start_date)
-    end_datetime = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)  # Include full end date
+    end_datetime = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
 
     if data.empty:
         print(f"❌ Data is empty for {csv_file}")
@@ -81,75 +77,74 @@ def fetch_data(csv_file, start_date, end_date, timeframe='1min'):
     print(f"📅 Slicing data from {start_datetime} to {end_datetime}")
     print(f"📊 Available data range: {data.index.min()} to {data.index.max()}")
     
-    # Filter data using boolean indexing for better compatibility
+    # Filter data using boolean indexing
     filtered = data[(data.index >= start_datetime) & (data.index <= end_datetime)].copy()
     filtered.reset_index(inplace=True)
     
     print(f"✅ Filtered data: {len(filtered)} rows")
 
-    # ✅ Cache this range for next time
-    _date_cache[range_key] = filtered
+    # ✅ Cache this range in Redis
+    if redis_cache.connected:
+        redis_cache.set_date_range_data(csv_file, timeframe, start_date, end_date, filtered)
+    
     return filtered
 
 
-def _load_from_disk_or_csv(csv_file, timeframe):
-    """Load full data from disk cache or CSV."""
-    data_dir = os.path.join(os.path.dirname(__file__), 'Data')
-    csv_path = os.path.join(data_dir, csv_file)
-
+def _load_from_csv(csv_file, timeframe):
+    """
+    Load data directly from CSV and process for timeframe
+    """
+    csv_path = os.path.join(DATA_DIR, csv_file)
+    
+    print(f"🔄 Loading {csv_file} for {timeframe}")
+    
+    # Check if CSV file exists
     if not os.path.exists(csv_path):
         print(f"❌ CSV file not found: {csv_path}")
         return pd.DataFrame()
-
-    cache_meta = os.path.join(CACHE_DIR, f"{csv_file}.meta")
-    cache_file = os.path.join(CACHE_DIR, f"{csv_file}_{timeframe}.pkl")
-    current_time = str(os.path.getmtime(csv_path))
-
-    # ✅ If disk cache is valid, load from it
-    if os.path.exists(cache_file) and os.path.exists(cache_meta):
-        with open(cache_meta, 'r') as meta:
-            cached_time = meta.read().strip()
-        if cached_time == current_time:
-            print(f"✅ Loaded {csv_file} [{timeframe}] from disk cache")
-            with open(cache_file, 'rb') as f:
-                return pickle.load(f)
-
-    # ✅ Otherwise, load CSV and cache it
-    return _load_and_cache(csv_path, cache_meta, timeframe, cache_file)
-
-
-def _load_and_cache(csv_path, cache_meta, timeframe, cache_file):
-    """Load CSV, aggregate if needed, and cache to disk."""
-    print(f"🔄 Loading {os.path.basename(csv_path)} for {timeframe} and caching...")
     
+    # Calculate current file hash for Redis cache validation
+    current_hash = _get_file_hash(csv_path)
+    
+    # Check if Redis cache is invalid (file changed)
+    if redis_cache.connected:
+        cached_hash = redis_cache.get_file_hash(csv_file)
+        if cached_hash and cached_hash != current_hash:
+            print(f"🗑️ Redis cache invalid (file changed), clearing...")
+            redis_cache.invalidate_file(csv_file)
+    
+    # Load and process data from CSV
+    print(f"📂 Loading fresh data from CSV: {csv_path}")
     try:
-        df = pd.read_csv(csv_path)
-        print(f"📊 Loaded CSV with {len(df)} rows and columns: {list(df.columns)}")
-        
-        # Check if required columns exist
-        if 'date' not in df.columns or 'time' not in df.columns:
-            print(f"❌ Required columns (date, time) not found in CSV. Available columns: {list(df.columns)}")
-            return pd.DataFrame()
-        
-        df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
-        df = df.set_index('datetime')
-        print(f"✅ Created datetime index. Date range: {df.index.min()} to {df.index.max()}")
-
-        if timeframe != '1min':
-            df = aggregate_timeframe(df, timeframe)
-            print(f"📈 Aggregated to {timeframe}: {len(df)} rows")
-
-        with open(cache_file, 'wb') as f:
-            pickle.dump(df, f)
-        with open(cache_meta, 'w') as meta:
-            meta.write(str(os.path.getmtime(csv_path)))
-        
-        print(f"💾 Cached data to {cache_file}")
-        return df
-        
+        data = pd.read_csv(csv_path)
     except Exception as e:
-        print(f"❌ Error loading CSV {csv_path}: {str(e)}")
+        print(f"❌ Error reading CSV: {e}")
         return pd.DataFrame()
+    
+    if data.empty:
+        print(f"❌ CSV file is empty: {csv_path}")
+        return pd.DataFrame()
+    
+    # Check if required columns exist
+    if 'date' not in data.columns or 'time' not in data.columns:
+        print(f"❌ Required columns (date, time) not found in CSV. Available columns: {list(data.columns)}")
+        return pd.DataFrame()
+    
+    # Process data
+    data['datetime'] = pd.to_datetime(data['date'] + ' ' + data['time'])
+    data = data.set_index('datetime')
+    print(f"✅ Created datetime index. Date range: {data.index.min()} to {data.index.max()}")
+
+    if timeframe != '1min':
+        data = aggregate_timeframe(data, timeframe)
+        print(f"📈 Aggregated to {timeframe}: {len(data)} rows")
+    
+    # Store file hash in Redis for future validation
+    if redis_cache.connected:
+        redis_cache.set_file_hash(csv_file, current_hash)
+        print(f"☁️ Cached data to Redis: {csv_file}_{timeframe}")
+    
+    return data
 
 
 def aggregate_timeframe(data, timeframe):

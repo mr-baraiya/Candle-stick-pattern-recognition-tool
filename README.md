@@ -54,15 +54,33 @@ This project is a web-based tool for detecting and visualizing candlestick patte
    git clone https://github.com/mr-baraiya/Candle-stick-pattern-recognition-tool.git
    cd Candle-stick-pattern-recognition-tool
    ```
-2. Install dependencies (recommend using a virtual environment):
+2. **Create a virtual environment (if not already created):**
+   ```bash
+   python -m venv venv
+   ```
+3. **Activate the virtual environment:**
+
+   * **Windows:**
+
+     ```bash
+     venv\Scripts\activate
+     ```
+
+   * **macOS/Linux:**
+
+     ```bash
+     source venv/bin/activate
+     ```
+
+4. **Install dependencies from `requirements.txt`:**
    ```bash
    pip install -r requirements.txt
    ```
-3. Run the application:
+5. Run the application:
    ```bash
    python run.py
    ```
-4. Open your browser at `http://localhost:5000` and start analyzing candlestick patterns!
+6. Open your browser at `http://localhost:5000` and start analyzing candlestick patterns!
 
 ## Folder Structure
 

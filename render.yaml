@@ -1,8 +1,27 @@
+# Exported from Render on 2025-08-03T12:44:56Z
 services:
-  - type: web
-    name: candle-stick-pattern-recognition-tool
-    env: python
-    plan: free
-    autoDeploy: true
-    buildCommand: pip install -r requirements.txt
-    startCommand: python run.py
+- type: web
+  name: Candle-stick-pattern-recognition-tool
+  runtime: python
+  repo: https://github.com/mr-baraiya/Candle-stick-pattern-recognition-tool
+  plan: free
+  envVars:
+  - key: CACHE_EXPIRE_DAYS_HASH
+    sync: false
+  - key: CACHE_EXPIRE_HOURS_RANGE
+    sync: false
+  - key: CACHE_EXPIRE_HOURS_FULL
+    sync: false
+  - key: FLASK_DEBUG
+    sync: false
+  - key: FLASK_ENV
+    sync: false
+  - key: UPSTASH_REDIS_REST_TOKEN
+    sync: false
+  - key: UPSTASH_REDIS_REST_URL
+    sync: false
+  region: oregon
+  buildCommand: pip install -r requirements.txt
+  startCommand: python run.py
+  autoDeployTrigger: commit
+version: "1"
